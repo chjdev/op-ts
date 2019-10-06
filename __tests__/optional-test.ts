@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import assert from "assert";
 import {
   empty,
   err,
@@ -20,19 +19,19 @@ describe("optional test cases", () => {
   it("can extract optionals", async () => {
     const val = 3;
     const opt = optional(val);
-    assert.doesNotThrow(
-      () => empty<number>().map(() => 3),
-      "should be mapable",
-    );
-    await assert.rejects(
+    // map without resolution
+    expect(() => empty<number>().map(() => 3)).not.toThrow();
+    //should be throw on empty map
+    await expect(
       empty<number>()
         .map(() => 3)
         .get(),
-      "should be throw on empty map",
-    );
-    assert(isOptional(opt), "type guard should recognize optionals");
-    assert(isOptional(empty()), "type guard should recognize optionals");
-    assert(isOptional(optional(null)), "type guard should recognize optionals");
+    ).rejects.toThrow();
+    test("type guard should recognize optionals", () => {
+      expect(isOptional(opt)).toBeTruthy();
+      expect(isOptional(empty())).toBeTruthy();
+      expect(isOptional(optional(null)));
+    });
     assert.strictEqual(
       await opt.get(),
       val,
