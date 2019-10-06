@@ -1,0 +1,10 @@
+{
+  "name": "op-ts",
+  "version": "0.5.0",
+  "description": "Safe Optionals, Results and matching for typescript",
+  "main": "lib/index.j",
+  "repository": "https://github.com/chjdev/op-ts",
+  "author": "Christian Junker <chjdev@gmail.com>",
+  "license": "MIT",
+  "private": false
+}
