@@ -2,7 +2,8 @@
   "name": "op-ts",
   "version": "0.5.0",
   "description": "Safe Optionals, Results and matching for typescript",
-  "main": "lib/index.j",
+  "main": "dist/index.ts",
+  "types": "dist/index.ts",
   "repository": "https://github.com/chjdev/op-ts",
   "author": "Christian Junker <chjdev@gmail.com>",
   "license": "MIT",
@@ -23,11 +24,12 @@
     "typescript-eslint": "^0.0.1-alpha.0"
   },
   "scripts": {
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-pattern '**/node_modules/'",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-pattern '/dist' --ignore-pattern '**/node_modules/'",
     "compile": "tsc",
     "jest": "jest",
-    "build": "npm-run-all lint compile",
-    "test": "npm-run-all lint jest"
+    "test": "npm-run-all lint jest",
+    "build": "npm-run-all test compile",
+    "prepublish": "npm-run-all build"
   },
   "dependencies": {
     "fast-deep-equal": "^2.0.1"

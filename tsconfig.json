@@ -13,13 +13,12 @@
     "noImplicitAny": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "isolatedModules": true,
     "module": "commonjs",
     "declaration": true,
-    "outDir": "./lib"
+    "outDir": "./dist"
   },
   "include": [
     "src"
   ],
-  "exclude": ["node_modules", "**/__tests__/*"]
+  "exclude": ["node_modules", "dist", "**/__tests__/*"]
 }
