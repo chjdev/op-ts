@@ -38,20 +38,13 @@ export interface Result<T, E extends RuntimeError> extends Optional<T | E> {
   toOptional(defaultValue?: T): Optional<T>;
 }
 
-export const isResult = (value: any): value is Result<any, RuntimeError> => {
+export const isResult = (
+  value: any,
+): value is Result<unknown, RuntimeError> => {
   const optValue = value; //for typescript
   return (
     // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    value instanceof _ResultImpl ||
-    (isOptional(optValue) &&
-      typeof value.ok === "function" &&
-      typeof value.err === "function" &&
-      typeof value.mapOk === "function" &&
-      typeof value.mapErr === "function" &&
-      typeof value.whenOk === "function" &&
-      typeof value.whenErr === "function" &&
-      typeof value.printErr === "function" &&
-      typeof value.toOptional === "function")
+    isOptional(optValue) && value instanceof _ResultImpl
   );
 };
 

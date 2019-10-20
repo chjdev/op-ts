@@ -40,7 +40,7 @@ export const block = async <T>(
   ): Promise<J> => {
     // we're trusting the typescript compiler here
     if (isResult(value)) {
-      return await resultJust(value, defaultValue);
+      return await resultJust(value as Result<J, E>, defaultValue);
     } else if (isOptional(value)) {
       return await optionalJust(value as Optional<J>, defaultValue);
     } else if (value == null) {
@@ -53,7 +53,7 @@ export const block = async <T>(
     const blockResult = await block(just);
     // we're trusting the typescript compiler here
     if (isResult(blockResult)) {
-      return blockResult.toOptional();
+      return (blockResult as Result<T, RuntimeError>).toOptional();
     } else if (isOptional(blockResult)) {
       return blockResult as Optional<T>;
     } else {

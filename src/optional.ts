@@ -75,22 +75,9 @@ export interface Optional<T> {
   ): Optional<R>;
 }
 
-export const isOptional = (value: any): value is Optional<any> => {
-  return (
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    value instanceof _OptionalImpl ||
-    (value != null &&
-      typeof value.unwrap === "function" &&
-      typeof value.get === "function" &&
-      typeof value.map === "function" &&
-      typeof value.forEach === "function" &&
-      typeof value.reduce === "function" &&
-      typeof value.match === "function" &&
-      typeof value.otherwise === "function" &&
-      typeof value.coalesce === "function" &&
-      typeof value.move === "function" &&
-      typeof value.moveIfExists === "function")
-  );
+export const isOptional = (value: any): value is Optional<unknown> => {
+  // eslint-disable-next-line @typescript-eslint/no-use-before-define
+  return value != null && value instanceof _OptionalImpl;
 };
 
 export const toPromise = <T>(
