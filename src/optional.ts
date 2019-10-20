@@ -1,14 +1,15 @@
 import { match, Matcher } from "./match";
+import { ExtendRuntimeError, RuntimeError } from "./error";
 
-export class NullError extends Error {
-  public readonly name: string = "NullError";
-  public readonly message: string = "attempted to access null value";
-}
+export class NullError extends ExtendRuntimeError(
+  "NullError",
+  "attempted to access null value",
+) {}
 
-export class ValueMovedError extends Error {
-  public readonly name: string = "ValueMovedError";
-  public readonly message: string = "value moved and lost ownership";
-}
+export class ValueMovedError extends ExtendRuntimeError(
+  "ValueMovedError",
+  "value moved and lost ownership",
+) {}
 
 export type OptionalTransducerResult<R> =
   | Promise<Optional<R>>
@@ -43,7 +44,6 @@ export interface Optional<T> {
   ): Optional<R>;
 
   move(into: (value: T) => void | Promise<void>): Optional<T>;
-  moveIfExists(into: (value: T) => void | Promise<void>): Optional<T>;
 
   match<
     R,
@@ -93,17 +93,15 @@ export const isOptional = (value: any): value is Optional<any> => {
   );
 };
 
-export const _toPromise = <T>(
+export const toPromise = <T>(
   value: T | undefined | null | Promise<T | null | undefined>,
-): Promise<T> => {
+): Promise<T | undefined | null> => {
+  if (value instanceof Promise) {
+    return value.then(toPromise);
+  }
   return new Promise((resolve, reject) => {
-    if (value == null) {
-      return resolve(undefined);
-    }
-    if (value instanceof Promise) {
-      return value
-        .then((val) => (val == null ? resolve(undefined) : resolve(val)))
-        .catch(reject);
+    if (value instanceof Error) {
+      return reject(value);
     }
     return resolve(value);
   });
@@ -112,7 +110,7 @@ export const _toPromise = <T>(
 export const optional = <T>(
   value: T | undefined | null | Promise<T | null | undefined>,
   // eslint-disable-next-line @typescript-eslint/no-use-before-define
-) => new _OptionalImpl<T>(_toPromise<T>(value));
+): Optional<T> => new _OptionalImpl<T>(toPromise<T>(value));
 
 export const empty = <T>(): Optional<T> => optional<T>(undefined);
 
@@ -150,7 +148,7 @@ export class _OptionalImpl<T> implements Optional<T> {
     return optional<R>(
       this.unwrap().then((value) => {
         if (value != null) {
-          throw value;
+          return Promise.reject(value);
         }
         return peel(fun()).get();
       }),
@@ -171,7 +169,7 @@ export class _OptionalImpl<T> implements Optional<T> {
   public async get(defaultValue?: T, throwErrors: boolean = false): Promise<T> {
     if (this.moved) {
       if (defaultValue == null) {
-        throw new ValueMovedError();
+        return Promise.reject(new ValueMovedError());
       } else {
         return defaultValue;
       }
@@ -179,7 +177,10 @@ export class _OptionalImpl<T> implements Optional<T> {
     try {
       const unwrapped = await this.value;
       if (unwrapped != null) {
-        if (throwErrors && unwrapped instanceof Error) {
+        if (throwErrors && unwrapped instanceof RuntimeError) {
+          if (defaultValue != null) {
+            return defaultValue;
+          }
           throw unwrapped;
         }
         return unwrapped;
@@ -190,6 +191,9 @@ export class _OptionalImpl<T> implements Optional<T> {
     } catch (err) {
       if (defaultValue != null) {
         return defaultValue;
+      }
+      if (err == null) {
+        throw new NullError();
       }
       throw err;
     }
@@ -209,22 +213,14 @@ export class _OptionalImpl<T> implements Optional<T> {
   }
 
   private static createMoved<R>(): Optional<R> {
-    const moved = optional<R>(_toPromise(undefined));
+    const moved = new _OptionalImpl<R>(toPromise(undefined));
     moved.moved = true;
     return moved;
   }
 
   public move(into: (value: T) => void | Promise<void>): Optional<T> {
     if (this.moved) {
-      throw new ValueMovedError();
-    }
-    this.map(into);
-    return _OptionalImpl.createMoved();
-  }
-
-  public moveIfExists(into: (value: T) => void | Promise<void>): Optional<T> {
-    if (this.moved) {
-      return _OptionalImpl.createMoved();
+      return this;
     }
     this.forEach(into);
     return _OptionalImpl.createMoved();

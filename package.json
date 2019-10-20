@@ -25,6 +25,7 @@
   "scripts": {
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-pattern '**/node_modules/'",
     "compile": "tsc",
+    "jest": "jest",
     "build": "npm-run-all lint compile",
     "test": "npm-run-all lint jest"
   },

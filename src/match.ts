@@ -1,4 +1,5 @@
 import deepEqual from "fast-deep-equal";
+import { ExtendRuntimeError } from "./error";
 
 // courtesy https://gist.github.com/navix/6c25c15e0a2d3cd0e5bce999e0086fc9
 // this one works better for the match cases than the ts-essentials one
@@ -48,15 +49,11 @@ class Otherwise {}
 const OtherwiseInstance = Object.freeze(new Otherwise());
 
 export class Predicate<T> {
-  private readonly _test: (value: T) => boolean;
-
-  public constructor(test: (value: T) => boolean) {
-    this._test = test;
-  }
+  public constructor(private readonly predicate: (value: T) => boolean) {}
 
   public test(value: T): value is T {
     try {
-      return this._test(value);
+      return this.predicate(value);
     } catch (err) {
       return false;
     }
@@ -115,10 +112,10 @@ export const whenBoolean = <T, R>(
 export const otherwise = <R>(fun: (value: unknown) => R) =>
   matcher(OtherwiseInstance, fun);
 
-export class NoDefaultCaseError extends Error {
-  public readonly name: string = "NoDefaultCaseError";
-  public readonly message: string = "no default case in exhaustive match";
-}
+export class NoDefaultCaseError extends ExtendRuntimeError(
+  "NoDefaultCaseError",
+  "no default case in exhaustive match",
+) {}
 
 export interface ValueMatch<R> {
   <T>(value: Promise<T>, defaultValue?: Promise<R>): Promise<R>;
@@ -131,17 +128,17 @@ export const match = <
   R,
   // allows better typing in the executer functions
   T1,
-  T2 = T1,
-  T3 = T2,
-  T4 = T3,
-  T5 = T4,
-  T6 = T5,
-  T7 = T6,
-  T8 = T7,
-  T9 = T8,
-  T10 = T9,
-  T11 = T10,
-  T12 = T11
+  T2,
+  T3,
+  T4,
+  T5,
+  T6,
+  T7,
+  T8,
+  T9,
+  T10,
+  T11,
+  T12
 >(
   m1: Matcher<T1, R>,
   m2?: Matcher<T2, R>,
@@ -200,28 +197,22 @@ export const match = <
     }
   };
 
-  return <T>(value: T, defaultValue?: any): any => {
+  return <T>(value: T | Promise<T>, defaultValue?: T): T | Promise<T> => {
     if (value instanceof Promise) {
       return new Promise((resolve, reject) => {
         value
-          .then((value) => {
+          .then((value: T) => {
             let val = null;
             try {
               val = caseMatch(value, defaultValue);
+              return resolve(val);
             } catch (err) {
-              if (err instanceof NoDefaultCaseError) {
-                try {
-                  val = caseMatch(undefined, defaultValue);
-                } catch (err) {
-                  reject(err);
-                }
-              } else {
-                return reject(err);
-              }
+              return reject(err);
             }
-            resolve(val);
           })
-          .catch(reject);
+          .catch((err) =>
+            defaultValue != null ? resolve(defaultValue) : reject(err),
+          );
       });
     } else {
       try {

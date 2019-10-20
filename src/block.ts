@@ -1,67 +1,23 @@
 import { empty, isOptional, NullError, optional, Optional } from "./optional";
-import { err, isResult, ok, Result } from "./result";
+import { RuntimeError } from "./error";
+import { isResult, Result } from "./result";
 
-export const just = <T>(value: T | undefined): T => {
-  if (value == null) {
-    throw new NullError("value is not just: " + JSON.stringify(value));
-  } else {
-    return value;
-  }
-};
-
-export const resultBlock = async <T, E extends Error>(
-  block: (
-    just: <J>(res: Result<J, E>) => Promise<J>,
-  ) => Result<T, E> | T | Promise<Result<T, E> | T>,
-): Promise<Result<T, E>> => {
-  class ExpectedError extends Error {
-    public readonly name: string = "ExpectedError";
-
-    public constructor(public readonly expected: E) {
-      super("Caught expected error.");
-    }
-  }
-
-  const just = async <J>(res: Result<J, E>, defaultValue?: J) => {
-    const optError = res.match(res.whenErr((err) => err));
-    const error = await optError.unwrap();
-    if (error != null) {
-      throw new ExpectedError(error);
-    }
-    return await res.ok((okValue) => okValue).get(defaultValue);
-  };
-  try {
-    const blockResult = await block(just);
-    // if it's a result the compiler enforces <T, E>
-    if (isResult(blockResult)) {
-      return blockResult as Result<T, E>;
-    } else {
-      return ok(blockResult as T);
-    }
-  } catch (error) {
-    if (error instanceof ExpectedError) {
-      return err(error.expected);
-    } else {
-      throw err;
-    }
-  }
-};
-
-interface PromiscuousJust {
-  <J, E extends Error>(res: Result<J, E>): Promise<J>;
-  <J>(res: Optional<J>): Promise<J>;
+interface PromiscuousJust<PE extends RuntimeError = RuntimeError> {
+  <J, E extends PE>(
+    value: Result<J, E> | Optional<J> | J | null | undefined,
+  ): Promise<J>;
 }
 
-export const optionalBlock = async <T>(
+export const block = async <T>(
   block: (
     just: PromiscuousJust,
   ) =>
     | Optional<T>
-    | Result<T, Error>
+    | Result<T, RuntimeError>
     | T
-    | Promise<Optional<T> | Result<T, Error> | T>,
+    | Promise<Optional<T> | Result<T, RuntimeError> | T>,
 ): Promise<Optional<T>> => {
-  const optionalResult = async <J, E extends Error>(
+  const resultJust = async <J, E extends RuntimeError>(
     res: Result<J, E>,
     defaultValue?: J,
   ): Promise<J> => {
@@ -78,17 +34,20 @@ export const optionalBlock = async <T>(
   ): Promise<J> => {
     return await value.get(defaultValue);
   };
-  const just: PromiscuousJust = async <J, E extends Error>(
-    value: Optional<J> | Result<J, E>,
+  const just: PromiscuousJust = async <J, E extends RuntimeError>(
+    value: Optional<J> | Result<J, E> | J | null | undefined,
     defaultValue?: J,
   ): Promise<J> => {
     // we're trusting the typescript compiler here
     if (isResult(value)) {
-      return await optionalResult(value, defaultValue);
+      return await resultJust(value, defaultValue);
     } else if (isOptional(value)) {
       return await optionalJust(value as Optional<J>, defaultValue);
+    } else if (value == null) {
+      throw new NullError();
+    } else {
+      return value;
     }
-    throw value;
   };
   try {
     const blockResult = await block(just);
