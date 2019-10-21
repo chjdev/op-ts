@@ -124,9 +124,9 @@ export interface ValueMatch<R> {
 }
 
 // ugly but works, 12 cases enough for now, increase when necessary
-export const match = <
+export function match<
   R,
-  // allows better typing in the executer functions
+  // allows individual typing in the executer functions
   T1,
   T2,
   T3,
@@ -140,6 +140,7 @@ export const match = <
   T11,
   T12
 >(
+  /* eslint-disable @typescript-eslint/no-unused-vars */
   m1: Matcher<T1, R>,
   m2?: Matcher<T2, R>,
   m3?: Matcher<T3, R>,
@@ -152,43 +153,16 @@ export const match = <
   m10?: Matcher<T10, R>,
   m11?: Matcher<T11, R>,
   m12?: Matcher<T12, R>,
-): ValueMatch<R> => {
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+): ValueMatch<R> {
+  // rest parameter not appropriate here
+  // eslint-disable-next-line prefer-rest-params
+  const matchers = arguments;
   const caseMatch = (value?: any, defaultValue?: any) => {
-    if (m1 != null && m1.test(value)) {
-      return m1.fun(value);
-    }
-    if (m2 != null && m2.test(value)) {
-      return m2.fun(value);
-    }
-    if (m3 != null && m3.test(value)) {
-      return m3.fun(value);
-    }
-    if (m4 != null && m4.test(value)) {
-      return m4.fun(value);
-    }
-    if (m5 != null && m5.test(value)) {
-      return m5.fun(value);
-    }
-    if (m6 != null && m6.test(value)) {
-      return m6.fun(value);
-    }
-    if (m7 != null && m7.test(value)) {
-      return m7.fun(value);
-    }
-    if (m8 != null && m8.test(value)) {
-      return m8.fun(value);
-    }
-    if (m9 != null && m9.test(value)) {
-      return m9.fun(value);
-    }
-    if (m10 != null && m10.test(value)) {
-      return m10.fun(value);
-    }
-    if (m11 != null && m11.test(value)) {
-      return m11.fun(value);
-    }
-    if (m12 != null && m12.test(value)) {
-      return m12.fun(value);
+    for (const m of matchers) {
+      if (m != null && m.test(value)) {
+        return m.fun(value);
+      }
     }
     if (defaultValue !== undefined) {
       return defaultValue;
@@ -226,4 +200,4 @@ export const match = <
       }
     }
   };
-};
+}
