@@ -1,24 +1,24 @@
 import {
   _OptionalImpl,
-  toPromise,
   isOptional,
   optional,
   Optional,
   OptionalTransducer,
   OptionalTransducerResult,
-  peel,
+  toPromise,
 } from "./optional";
 import { Matcher, otherwise, Predicate, predicate, when } from "./match";
 import { RuntimeError } from "./error";
 
-export interface Result<T, E extends RuntimeError> extends Optional<T | E> {
+export interface Result<T, E extends RuntimeError = RuntimeError>
+  extends Optional<T | E> {
   whenOk<R>(
     fun: OptionalTransducer<T, R>,
   ): Matcher<T, OptionalTransducerResult<R>>;
 
   ok<R>(fun: OptionalTransducer<T, R>): Optional<R>;
 
-  mapOk<R>(mapper: OptionalTransducer<T, R>, defaultValue?: T): Result<R, E>;
+  mapOk<R>(mapper: OptionalTransducer<T, R>): Result<R, E>;
 
   predicate(test: (value: T) => boolean): Predicate<T>;
 
@@ -26,11 +26,10 @@ export interface Result<T, E extends RuntimeError> extends Optional<T | E> {
     fun: OptionalTransducer<E, R>,
   ): Matcher<E, OptionalTransducerResult<R>>;
 
-  err<R>(fun: OptionalTransducer<E, R>): Promise<void>;
+  err(fun: OptionalTransducer<E, void>): Promise<void>;
 
   mapErr<R extends RuntimeError>(
     mapper: OptionalTransducer<E, R>,
-    defaultValue?: E,
   ): Result<T, R>;
 
   printErr(): Promise<void>;
@@ -95,27 +94,12 @@ export class _ResultImpl<
   }
 
   public ok<R>(fun: OptionalTransducer<T, R>): Optional<R> {
-    return this.match(
-      this.whenOk(fun),
-      otherwise((val) => {
-        throw val;
-      }),
-    );
+    return this.mapOk(fun).toOptional();
   }
 
-  public mapOk<R>(
-    mapper: OptionalTransducer<T, R>,
-    defaultValue?: T,
-  ): Result<R, E> {
+  public mapOk<R>(mapper: OptionalTransducer<T, R>): Result<R, E> {
     return fromOptional<R, E>(
-      this.map(async (valueOrError) => {
-        if (valueOrError instanceof RuntimeError) {
-          return valueOrError;
-        } else {
-          const mapped = mapper(valueOrError);
-          return peel(mapped).get();
-        }
-      }, defaultValue),
+      this.match(this.whenOk(mapper), this.whenErr((err): R | E => err)),
     );
   }
 
@@ -131,28 +115,15 @@ export class _ResultImpl<
     return whenErr(fun);
   }
 
-  public async err<R>(fun: OptionalTransducer<E, R>): Promise<void> {
-    await this.match(
-      this.whenErr(fun),
-      otherwise((val) => {
-        throw val;
-      }),
-    );
+  public async err(fun: OptionalTransducer<E, void>): Promise<void> {
+    await this.match(this.whenErr(fun), otherwise(() => {})).unwrap();
   }
 
   public mapErr<R extends RuntimeError>(
     mapper: OptionalTransducer<E, R>,
-    defaultValue?: E,
   ): Result<T, R> {
     return fromOptional<T, R>(
-      this.map(async (valueOrError) => {
-        if (valueOrError instanceof RuntimeError) {
-          const mapped = mapper(valueOrError);
-          return peel(mapped).get();
-        } else {
-          return valueOrError;
-        }
-      }, defaultValue),
+      this.match(this.whenOk((val): T | R => val), this.whenErr(mapper)),
     );
   }
 

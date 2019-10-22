@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { err, ok, whenErr, whenOk } from "../src/result";
 import { otherwise, predicate, when } from "../src/match";
-import { optional } from "../src/optional";
+import { NullError, optional } from "../src/optional";
 import { ExtendRuntimeError } from "../src/error";
 
 class C1 {
@@ -13,6 +13,7 @@ class C2 extends C1 {}
 class C3 {}
 
 class TestError extends ExtendRuntimeError("TestError", "test message") {}
+class TestError2 extends ExtendRuntimeError("TestError2", "test message") {}
 
 describe("results test", () => {
   it("it can handle Ok basic results", async () => {
@@ -135,5 +136,35 @@ describe("results test", () => {
     ).resolves.toBe(3);
     await expect(result.get()).rejects.toBeInstanceOf(TestError);
     await expect(result.get(2)).resolves.toBe(2);
+  });
+
+  it("handles quick paths", async () => {
+    const resultOk = ok<number, TestError>(1);
+    await expect(resultOk.ok((val) => val + 1).get()).resolves.toBe(2);
+    await expect(resultOk.err((val) => {})).resolves.toBeUndefined();
+
+    const resultErr = err<number, TestError>(new TestError());
+    await expect(resultErr.ok((val) => val + 1).get()).rejects.toBeInstanceOf(
+      NullError,
+    );
+    await expect(resultErr.err((val) => {})).resolves.toBeUndefined();
+  });
+
+  it("handles mapOk mapErr", async () => {
+    const resultOk = ok<number, TestError>(1);
+    await expect(
+      resultOk.mapOk((val): string => val + "hello").get(),
+    ).resolves.toBe("1hello");
+    await expect(
+      resultOk.mapErr((err) => new TestError2()).get(),
+    ).resolves.toBe(1);
+
+    const resultErr = err<number, TestError>(new TestError());
+    await expect(
+      resultErr.mapOk((val): string => val + "hello").get(),
+    ).rejects.toBeInstanceOf(TestError);
+    await expect(
+      resultErr.mapErr((err) => new TestError2()).get(),
+    ).rejects.toBeInstanceOf(TestError2);
   });
 });

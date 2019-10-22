@@ -111,6 +111,8 @@ export const peel = <R>(value: OptionalTransducerResult<R>): Optional<R> => {
       return peeled.get();
     });
     return optional(peeledPromise);
+  } else if (value == null) {
+    return empty();
   } else {
     return optional(value);
   }
