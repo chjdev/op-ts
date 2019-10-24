@@ -7,7 +7,7 @@ import {
   optional,
   ValueMovedError,
 } from "../src/optional";
-import { otherwise, when } from "../src/match";
+import { otherwise, when, whenPresent } from "../src/match";
 
 describe("optional test cases", () => {
   it("can extract optionals", async () => {
@@ -19,6 +19,15 @@ describe("optional test cases", () => {
     expect(isOptional(opt)).toBeTruthy();
     expect(isOptional(empty())).toBeTruthy();
     expect(isOptional(optional(null)));
+  });
+
+  it("can match filled optionals", async () => {
+    const val = 3;
+    const opt = optional(val);
+
+    await expect(
+      opt.match(whenPresent(() => 11), otherwise(() => -1)).get(),
+    ).resolves.toBe(11);
 
     await expect(
       opt
@@ -35,6 +44,18 @@ describe("optional test cases", () => {
         )
         .get(),
     ).resolves.toBe(3);
+  });
+
+  it("can match empty optionals", async () => {
+    const opt = empty<number>();
+
+    await expect(
+      opt.match(whenPresent(() => 11), otherwise(() => -1)).get(),
+    ).resolves.toBe(-1);
+
+    await expect(
+      opt.match(when(2, () => -1), otherwise(() => Promise.resolve(11))).get(),
+    ).resolves.toBe(11);
   });
 
   it("can work with filled optionals in normal mode", async () => {
