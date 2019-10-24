@@ -3,9 +3,8 @@ import { RuntimeError } from "./error";
 import { isResult, Result } from "./result";
 
 interface PromiscuousJust<PE extends RuntimeError = RuntimeError> {
-  <J, E extends PE>(
-    value: Result<J, E> | Optional<J> | J | null | undefined,
-  ): Promise<J>;
+  <J, E extends PE>(value: Result<J, E>): Promise<J>;
+  <J>(value: Optional<J> | J | null | undefined): Promise<J>;
 }
 
 export const block = async <T>(
