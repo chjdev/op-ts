@@ -75,6 +75,8 @@ export interface Optional<T> {
   ): Optional<R>;
 }
 
+export type OrOptional<T> = T | Optional<T>;
+
 export const isOptional = (value: any): value is Optional<unknown> => {
   // eslint-disable-next-line @typescript-eslint/no-use-before-define
   return value != null && value instanceof _OptionalImpl;
@@ -125,6 +127,9 @@ export class _OptionalImpl<T> implements Optional<T> {
   public constructor(private readonly value: Promise<T | undefined | null>) {}
 
   public async unwrap(): Promise<T | undefined> {
+    if (this.moved) {
+      return Promise.reject(new ValueMovedError());
+    }
     try {
       const value = await this.value;
       return value == null ? undefined : value;
