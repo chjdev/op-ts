@@ -1,6 +1,6 @@
 {
   "name": "opresults",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "Safe Optionals, Results and matching for typescript",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
