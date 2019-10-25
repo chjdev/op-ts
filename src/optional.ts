@@ -45,6 +45,8 @@ export interface Optional<T> {
 
   move(into: (value: T) => void | Promise<void>): Optional<T>;
 
+  concat<A>(...others: Optional<A>[]): Optional<(T | A)[]>;
+
   match<
     R,
     T1 extends T | unknown,
@@ -241,6 +243,17 @@ export class _OptionalImpl<T> implements Optional<T> {
         peel(reducer(initialValue, value)).get(),
       ),
     );
+  }
+
+  public concat<A>(...others: Optional<A>[]): Optional<(T | A)[]> {
+    return others.reduce((acc, other) => {
+      return acc.map((vals) =>
+        other.map((otherVal) => {
+          vals.push(otherVal);
+          return vals;
+        }),
+      );
+    }, this.map((val) => [val] as (T | A)[]));
   }
 
   public match<

@@ -125,4 +125,15 @@ describe("optional test cases", () => {
     await expect(a.move(gobbler).get()).rejects.toBeInstanceOf(ValueMovedError);
     await expect(a.map(() => -1).get()).rejects.toBeInstanceOf(ValueMovedError);
   });
+
+  it("can concat optionals", async () => {
+    const a = optional(1);
+    const b = optional(2);
+    const c = optional(3);
+    const empt = empty<number>();
+
+    await expect(a.concat(b, c).get()).resolves.toStrictEqual([1, 2, 3]);
+    await expect(b.concat(c, a).get()).resolves.toStrictEqual([2, 3, 1]);
+    await expect(b.concat(c, empt, a).get()).rejects.toBeInstanceOf(NullError);
+  });
 });
