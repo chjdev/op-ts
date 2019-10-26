@@ -124,6 +124,7 @@ export interface ValueMatch<R> {
 }
 
 // ugly but works, 12 cases enough for now, increase when necessary
+// function in order to use arguments
 export function match<
   R,
   // allows individual typing in the executer functions

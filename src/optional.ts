@@ -1,52 +1,165 @@
 import { match, Matcher } from "./match";
 import { ExtendRuntimeError, RuntimeError } from "./error";
 
+/**
+ * Thrown when trying to access empty optionals.
+ */
 export class NullError extends ExtendRuntimeError(
   "NullError",
   "attempted to access null value",
 ) {}
 
+/**
+ * Thrown when trying to access a moved optional.
+ */
 export class ValueMovedError extends ExtendRuntimeError(
   "ValueMovedError",
   "value moved and lost ownership",
 ) {}
 
+/**
+ * Valid return values for `Optional` transducers. Either a plain value, another
+ * `Optional`, or a `Promise` of either.
+ */
 export type OptionalTransducerResult<R> =
   | Promise<Optional<R>>
   | Optional<R>
   | Promise<R>
   | R;
 
+/**
+ * A transducer to modify an optional. Aka `mapper` function, but also used
+ * outside of `map`.
+ * Takes a plain value of `T` and returns a new different result of `R`.
+ */
 export type OptionalTransducer<T, R> = (
   value: T,
 ) => OptionalTransducerResult<R>;
 
+/**
+ * `Optional`s wrap potentially unavailable values and provide functions
+ * to safely use them in computations.
+ * Unavailable values might be `undefined`, `null`, or rejected `Promise`s.
+ * A special case are `RuntimeError` and `Error` objects. These are treated as
+ * unavailable if `throwErrors` is set to true when using `get`.
+ *
+ * @example
+ * const o: Optional<string> = ...;
+ * await o.map((str) => str.length).map((len) => len * 2).forEach(console.log);
+ */
 export interface Optional<T> {
+  /**
+   * Safely unwrap the value from the `Optional`.
+   * @returns the value if present or `undefined`
+   */
   unwrap(): Promise<T | undefined>;
 
-  otherwise<R = void>(fun: OptionalTransducer<void, R>): Optional<R>;
-
-  coalesce(fun: OptionalTransducer<void, T>): Optional<T>;
-
+  /**
+   * Try to get the value of the optional.
+   * @param defaultValue optional default value
+   * @throws NullError if the optional is unfilled and no default value was
+   *  provided
+   * @throws ValueMovedError if the optional has moved and no default value was
+   *  provided
+   * @returns the value if present
+   */
   get(defaultValue?: T): Promise<T>;
 
+  /**
+   * Ran when the optional is unfilled.
+   * @param fun a transducer taking no input and returning an optional value
+   * @returns an `Optional` containing the result of `fun` if it has run
+   */
+  otherwise<R = void>(fun: OptionalTransducer<void, R>): Optional<R>;
+
+  /**
+   * Coalesce this optional with a transducer result, i.e. if this optional is
+   * unfilled, use the return value of the transducer
+   * @param fun a transducer taking no input and returning a value.
+   * @returns an `Optional` coalesced by a transducer
+   */
+  coalesce(fun: OptionalTransducer<void, T>): Optional<T>;
+
+  /**
+   * Transform the optionals content (if present).
+   * @param mapper a transducer taking a value of `T` and transforming it into
+   *  an `R`
+   * @param defaultValue optional default value
+   * @returns an `Optional` possibly containing the transduced value
+   * @throws ValueMovedError this `Optional` has moved
+   */
   map<R>(mapper: OptionalTransducer<T, R>, defaultValue?: T): Optional<R>;
 
+  /**
+   * Run a function if the `Optional` is filled.
+   * @param fun the function to run, taking the value
+   * @param defaultValue optional default value
+   * @throws ValueMovedError this `Optional` has moved
+   */
   forEach(
     fun: (value: T) => void | Promise<void>,
     defaultValue?: T,
   ): Promise<void>;
 
+  /**
+   * If present reduce the value onto the initial value
+   * @param reducer reducer function taking previous (initial) value and current
+   *  value and returns a new value
+   * @param initialValue the initial value
+   * @param defaultValue optional default value
+   * @returns a new `Optional` possibly containing the reduced value
+   * @throws ValueMovedError this `Optional` has moved
+   */
   reduce<R>(
     reducer: (prevValue: R, value: T) => OptionalTransducerResult<R>,
     initialValue: R,
     defaultValue?: T,
   ): Optional<R>;
 
+  /**
+   * Move the value of this optional (if present) into the provided function
+   * @param into function to be called with the `Optional`s value
+   * @returns a moved `Optional`
+   * @throws ValueMovedError this `Optional` has moved
+   *
+   * @example
+   * let seconds: Optional<number> = optional(5);
+   * seconds = seconds.move(setTimeout);
+   * // seconds.get(); // throws ValueMovedError
+   */
   move(into: (value: T) => void | Promise<void>): Optional<T>;
 
+  /**
+   * Concat multiple `Optional`s together. They will only resolve if each
+   * individual `Optional` resolves.
+   * @param others the `Optional`s to concat with this optional
+   * @returns an `Optional` that resolves to an array of the invidiual
+   *  `Optional`s values
+   *
+   * @example
+   * const a = optional(1);
+   * const b = optional(2);
+   * const c = optional(3);
+   * const empt = empty<number>();
+   * await a.concat(b, c).get(); // [1, 2, 3]
+   * await b.concat(c, a).get(); // [2, 3, 1]
+   * // await b.concat(c, empt, a).get(); // throws NullError
+   */
   concat<A>(...others: Optional<A>[]): Optional<(T | A)[]>;
 
+  /**
+   * Allow type safe matching on this optional. @see match
+   * @param m1-m12 matching functions returning transducer results
+   * @returns `Optional` possibly containing the matched result
+   *
+   * @example
+   * optional(1)
+   *   .match(
+   *     when(2, () => -1),
+   *     when(1, (val) => optional(val * 3)),
+   *     otherwise(() => -1),
+   *   ).get(); // 3
+   */
   match<
     R,
     T1 extends T | unknown,
@@ -77,8 +190,17 @@ export interface Optional<T> {
   ): Optional<R>;
 }
 
+/**
+ * Convenience type to have an optional `Optional` typing in addition to the
+ * normal type.
+ */
 export type OrOptional<T> = T | Optional<T>;
 
+/**
+ * type guard to check whether a value is an `Optional`.
+ * @param value the value to check
+ * @returns value is an `Optional`
+ */
 export const isOptional = (value: any): value is Optional<unknown> => {
   // eslint-disable-next-line @typescript-eslint/no-use-before-define
   return value != null && value instanceof _OptionalImpl;
@@ -173,7 +295,10 @@ export class _OptionalImpl<T> implements Optional<T> {
     try {
       const unwrapped = await this.value;
       if (unwrapped != null) {
-        if (throwErrors && unwrapped instanceof RuntimeError) {
+        if (
+          throwErrors &&
+          (unwrapped instanceof RuntimeError || unwrapped instanceof Error)
+        ) {
           if (defaultValue != null) {
             return defaultValue;
           }

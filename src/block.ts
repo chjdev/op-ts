@@ -2,11 +2,44 @@ import { empty, isOptional, NullError, optional, Optional } from "./optional";
 import { RuntimeError } from "./error";
 import { isResult, Result } from "./result";
 
+/**
+ * Interface for a function that can be called with either a `Result` or an
+ * `Optional` and resolves it to it's filled value or terminates the block
+ * execution.
+ */
 interface PromiscuousJust<PE extends RuntimeError = RuntimeError> {
-  <J, E extends PE>(value: Result<J, E>): Promise<J>;
-  <J>(value: Optional<J> | J | null | undefined): Promise<J>;
+  /**
+   * path that resolves a `Result` to its value
+   * @param value the `Result` to resolve
+   * @param defaultValue an optional default value
+   */
+  <J, E extends PE>(value: Result<J, E>, defaultValue?: J): Promise<J>;
+  /**
+   * path that resolves an `Optional` to its value
+   * @param value the `Optional` to resolve
+   * @param defaultValue an optional default value
+   */
+  <J>(value: Optional<J> | J | null | undefined, defaultValue?: J): Promise<J>;
 }
 
+/**
+ * Create an execution block that results in an `Optional`.
+ * This allows a more streamlined/linear approach to working with optionals,
+ * where instead of having to chain transducers one can resolve the value
+ * on the spot, terminating the block if the optional is unfilled.
+ *
+ * @param block the execution block taking a single parameter `just` which can
+ *  be used to resolve an `Optional`'s (or `Result`'s) value.
+ * @returns an `Optional` representing the result of the block execution
+ *
+ * @example
+ * const opt: Optional<string> = await block(async (just) => {
+ *    const a: number = await just(valA);
+ *    const b: string = await just(valB);
+ *    const c: number = await just(valD);
+ *    return b + ":" + a * c;
+ *  });
+ */
 export const block = async <T>(
   block: (
     just: PromiscuousJust,
