@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { err, ok, whenErr, whenOk } from "../src/result";
-import { otherwise, predicate, when } from "../src/match";
-import { NullError, optional } from "../src/optional";
-import { ExtendRuntimeError } from "../src/error";
+import { err, NullError, ok, optional, whenErr, whenOk } from "../src";
+import { otherwise, when } from "@opresults/match";
+import { ExtendRuntimeError } from "@opresults/common";
 
 class C1 {
   public readonly num: number = 3;
@@ -13,6 +12,7 @@ class C2 extends C1 {}
 class C3 {}
 
 class TestError extends ExtendRuntimeError("TestError", "test message") {}
+
 class TestError2 extends ExtendRuntimeError("TestError2", "test message") {}
 
 describe("results test", () => {

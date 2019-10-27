@@ -1,5 +1,5 @@
 import deepEqual from "fast-deep-equal";
-import { ExtendRuntimeError } from "./error";
+import { ExtendRuntimeError } from "@opresults/common";
 
 // courtesy https://gist.github.com/navix/6c25c15e0a2d3cd0e5bce999e0086fc9
 // this one works better for the match cases than the ts-essentials one

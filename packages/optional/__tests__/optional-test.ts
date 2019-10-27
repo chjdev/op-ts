@@ -6,8 +6,8 @@ import {
   Optional,
   optional,
   ValueMovedError,
-} from "../src/optional";
-import { otherwise, when, whenPresent } from "../src/match";
+} from "../src";
+import { otherwise, when, whenPresent } from "@opresults/match";
 
 describe("optional test cases", () => {
   it("can extract optionals", async () => {

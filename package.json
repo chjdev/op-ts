@@ -1,13 +1,9 @@
 {
-  "name": "opresults",
-  "version": "1.1.0",
   "description": "Safe Optionals, Results and matching for typescript",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
   "repository": "https://github.com/chjdev/opresults",
   "author": "Christian Junker <chjdev@gmail.com>",
   "license": "MIT",
-  "private": false,
+  "private": true,
   "devDependencies": {
     "@types/jest": "^24.0.18",
     "@types/node": "^12.7.11",
@@ -24,14 +20,11 @@
     "typescript-eslint": "^0.0.1-alpha.0"
   },
   "scripts": {
-    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-pattern '/dist' --ignore-pattern '**/node_modules/'",
-    "compile": "tsc",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx --ignore-pattern '**/dist/' --ignore-pattern '**/node_modules/'",
     "jest": "jest",
-    "test": "npm-run-all lint jest",
-    "build": "npm-run-all test compile",
-    "prepublish": "npm-run-all build"
+    "test": "npm-run-all lint jest"
   },
-  "dependencies": {
-    "fast-deep-equal": "^2.0.1"
-  }
+  "workspaces": [
+    "packages/*"
+  ]
 }
