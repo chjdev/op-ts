@@ -1,5 +1,4 @@
-import { block } from "../src/block";
-import { empty, NullError, optional, Optional } from "../src/optional";
+import { block, empty, NullError, optional, Optional } from "../src";
 
 const valA = optional(5);
 const valB = optional("hello");

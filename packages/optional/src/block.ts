@@ -1,5 +1,5 @@
 import { empty, isOptional, NullError, optional, Optional } from "./optional";
-import { RuntimeError } from "./error";
+import { RuntimeError } from "@opresults/common";
 import { isResult, Result } from "./result";
 
 /**

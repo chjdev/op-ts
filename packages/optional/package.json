@@ -1,0 +1,25 @@
+{
+  "name": "@opresults/optional",
+  "version": "2.0.0",
+  "description": "Safe Optionals, Results and matching for typescript",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "repository": "https://github.com/chjdev/opresults",
+  "author": "Christian Junker <chjdev@gmail.com>",
+  "license": "MIT",
+  "private": false,
+  "devDependencies": {
+    "typescript": "^3.6.3"
+  },
+  "dependencies": {
+    "@opresults/common": "^2.0.1",
+    "@opresults/match": "^2.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublish": "yarn build"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

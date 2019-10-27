@@ -1,5 +1,5 @@
-import { match, Matcher } from "./match";
-import { ExtendRuntimeError, RuntimeError } from "./error";
+import { match, Matcher } from "@opresults/match";
+import { ExtendRuntimeError, RuntimeError } from "@opresults/common";
 
 /**
  * Thrown when trying to access empty optionals.

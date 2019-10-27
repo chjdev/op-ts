@@ -7,8 +7,14 @@ import {
   OptionalTransducerResult,
   toPromise,
 } from "./optional";
-import { Matcher, otherwise, Predicate, predicate, when } from "./match";
-import { RuntimeError } from "./error";
+import {
+  Matcher,
+  otherwise,
+  Predicate,
+  predicate,
+  when,
+} from "@opresults/match";
+import { RuntimeError } from "@opresults/common";
 
 export interface Result<T, E extends RuntimeError = RuntimeError>
   extends Optional<T | E> {
