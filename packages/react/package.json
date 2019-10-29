@@ -9,10 +9,21 @@
   "license": "MIT",
   "private": false,
   "devDependencies": {
+    "@types/enzyme": "^3.10.3",
+    "@types/enzyme-adapter-react-16": "^1.0.5",
+    "@types/react": "^16.9.11",
+    "@types/react-dom": "^16.9.3",
+    "enzyme": "^3.10.0",
+    "enzyme-adapter-react-16": "^1.15.1",
+    "react": "16.9",
+    "react-dom": "16.9",
     "typescript": "^3.6.3"
   },
   "scripts": {
     "build": "tsc",
     "prepublish": "yarn build"
+  },
+  "peerDependencies": {
+    "react": "^16.8"
   }
 }
