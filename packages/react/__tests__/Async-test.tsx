@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
 import Enzyme, { mount } from "enzyme";
 import { Async } from "../src/Async";
