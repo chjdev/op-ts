@@ -1,4 +1,5 @@
 {
+  "name": "opresults",
   "description": "Safe Optionals, Results and matching for typescript",
   "repository": "https://github.com/chjdev/opresults",
   "author": "Christian Junker <chjdev@gmail.com>",

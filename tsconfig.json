@@ -13,10 +13,7 @@
     "resolveJsonModule": true,
     "module": "commonjs",
     "declaration": true,
-    "baseUrl": "./packages",
-    "paths": {
-      "@op/common": ["common"]
-    }
+    "baseUrl": "./packages"
   },
-  "exclude": ["**/node_modules", "**/dist", "**/__tests__/*"]
+  "exclude": ["**/node_modules", "**/dist", "**/__tests__"]
 }

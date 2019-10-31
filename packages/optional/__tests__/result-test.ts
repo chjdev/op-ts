@@ -34,6 +34,14 @@ describe("results test", () => {
     );
     await expect(partialNumberMatch.get()).resolves.toBe(9);
 
+    const partialNumberMatchNoOtherwise = result.match(
+      when(0, () => 10),
+      when(5, (val) => val * 5),
+    );
+    await expect(partialNumberMatchNoOtherwise.get()).rejects.toBeInstanceOf(
+      NullError,
+    );
+
     const predicateNumberMatch = result.match(
       when(0, () => 10),
       when(result.predicate((val) => val === 3), (val) => val * 3),

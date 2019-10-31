@@ -1,4 +1,4 @@
-import { match, Matcher } from "@opresults/match";
+import { match, Matcher, NoDefaultCaseError } from "@opresults/match";
 import { ExtendRuntimeError, RuntimeError } from "@opresults/common";
 
 /**
@@ -206,11 +206,15 @@ export const isOptional = (value: any): value is Optional<unknown> => {
   return value != null && value instanceof _OptionalImpl;
 };
 
-export const toPromise = <T>(
+/**
+ * Internal method that converts an opitonal value ?T or Promise<?T> to a Promise<?T>
+ * @param value the value to convert
+ */
+export const _toPromise = <T>(
   value: T | undefined | null | Promise<T | null | undefined>,
 ): Promise<T | undefined | null> => {
   if (value instanceof Promise) {
-    return value.then(toPromise);
+    return value.then(_toPromise);
   }
   return new Promise((resolve, reject) => {
     if (value instanceof Error) {
@@ -220,16 +224,29 @@ export const toPromise = <T>(
   });
 };
 
+/**
+ * Creates a new `Optional` from an optional value or a promise
+ * @param value an optional value of ?T or a Promise<?T>
+ * @returns `Optional` wrapped value
+ */
 export const optional = <T>(
   value: T | undefined | null | Promise<T | null | undefined>,
   // eslint-disable-next-line @typescript-eslint/no-use-before-define
-): Optional<T> => new _OptionalImpl<T>(toPromise<T>(value));
+): Optional<T> => new _OptionalImpl<T>(_toPromise<T>(value));
 
+/**
+ * @returns an empty `Optional`
+ */
 export const empty = <T>(): Optional<T> => optional<T>(undefined);
 
-export const peel = <R>(value: OptionalTransducerResult<R>): Optional<R> => {
+/**
+ * Convert a transducer result to a plain `Optional`
+ * @param value a transducer result
+ * @returns plain `Optional`
+ */
+const peel = <R>(value: OptionalTransducerResult<R>): Optional<R> => {
   if (isOptional(value)) {
-    return optional(value.get());
+    return value;
   } else if (value instanceof Promise) {
     const promise: Promise<R | Optional<R>> = value;
     const peeledPromise: Promise<R> = promise.then((value: R | Optional<R>) => {
@@ -334,7 +351,7 @@ export class _OptionalImpl<T> implements Optional<T> {
   }
 
   private static createMoved<R>(): Optional<R> {
-    const moved = new _OptionalImpl<R>(toPromise(undefined));
+    const moved = new _OptionalImpl<R>(_toPromise(undefined));
     moved.moved = true;
     return moved;
   }
@@ -425,8 +442,15 @@ export class _OptionalImpl<T> implements Optional<T> {
     );
     return optional<R>(
       this.unwrap().then((unwrapped) => {
-        const matched = valueMatcher(unwrapped);
-        return peel(matched).get();
+        try {
+          const matched = valueMatcher(unwrapped);
+          return peel(matched).get();
+        } catch (err) {
+          if (err instanceof NoDefaultCaseError) {
+            return undefined;
+          }
+          throw err;
+        }
       }),
     );
   }
